@@ -33,10 +33,12 @@ class ConvVAE(object):
     :param is_training: (bool)
     :param beta: (float) weight for KL loss
     :param reuse: (bool)
+    :param net_arch: (str) 'tiny' or 'default'
     """
 
     def __init__(self, z_size=512, batch_size=100, learning_rate=0.0001,
-                 kl_tolerance=0.5, is_training=True, beta=1.0, reuse=False):
+                 kl_tolerance=0.5, is_training=True, beta=1.0, reuse=False,
+                 net_arch='default'):
         self.z_size = z_size
         self.batch_size = batch_size
         self.learning_rate = learning_rate
@@ -47,6 +49,7 @@ class ConvVAE(object):
         self.graph = None
         self.input_tensor = None
         self.output_tensor = None
+        self.net_arch = net_arch
 
         with tf.variable_scope('conv_vae', reuse=self.reuse):
             self._build_graph()
@@ -62,11 +65,18 @@ class ConvVAE(object):
             self.input_tensor = tf.placeholder(tf.float32, shape=[None, 80, 160, 3])
 
             # Encoder
-            h = tf.layers.conv2d(self.input_tensor, 32, 4, strides=2, activation=tf.nn.relu, name="enc_conv1")
-            h = tf.layers.conv2d(h, 64, 4, strides=2, activation=tf.nn.relu, name="enc_conv2")
-            h = tf.layers.conv2d(h, 128, 4, strides=2, activation=tf.nn.relu, name="enc_conv3")
-            h = tf.layers.conv2d(h, 256, 4, strides=2, activation=tf.nn.relu, name="enc_conv4")
-            # h = tf.reshape(h, [-1, 3 * 8 * 256])
+            if self.net_arch == 'tiny':
+                h = tf.layers.conv2d(self.input_tensor, 64, kernel_size=7, strides=2,
+                                     activation=tf.nn.relu, name="enc_conv1")
+                h = tf.layers.max_pooling2d(h, pool_size=3, strides=2, name="max_pool_1")
+                h = tf.layers.conv2d(h, 64, kernel_size=3, strides=2,
+                                     activation=tf.nn.relu, name="enc_conv2")
+                h = tf.layers.max_pooling2d(h, pool_size=3, strides=2, name="max_pool_2")
+            else:
+                h = tf.layers.conv2d(self.input_tensor, 32, 4, strides=2, activation=tf.nn.relu, name="enc_conv1")
+                h = tf.layers.conv2d(h, 64, 4, strides=2, activation=tf.nn.relu, name="enc_conv2")
+                h = tf.layers.conv2d(h, 128, 4, strides=2, activation=tf.nn.relu, name="enc_conv3")
+                h = tf.layers.conv2d(h, 256, 4, strides=2, activation=tf.nn.relu, name="enc_conv4")
             h = conv_to_fc(h)
 
             # VAE
@@ -84,9 +94,14 @@ class ConvVAE(object):
             # Decoder
             h = tf.layers.dense(self.z, 3 * 8 * 256, name="dec_fc")
             h = tf.reshape(h, [-1, 3, 8, 256])
-            h = tf.layers.conv2d_transpose(h, 128, 4, strides=2, activation=tf.nn.relu, name="dec_deconv1")
-            h = tf.layers.conv2d_transpose(h, 64, 4, strides=2, activation=tf.nn.relu, name="dec_deconv2")
-            h = tf.layers.conv2d_transpose(h, 32, 5, strides=2, activation=tf.nn.relu, name="dec_deconv3")
+            if self.net_arch == 'tiny':
+                h = tf.layers.conv2d_transpose(h, 64, 4, strides=2, activation=tf.nn.relu, name="dec_deconv1")
+                h = tf.layers.conv2d_transpose(h, 64, 4, strides=2, activation=tf.nn.relu, name="dec_deconv2")
+                h = tf.layers.conv2d_transpose(h, 32, 5, strides=2, activation=tf.nn.relu, name="dec_deconv3")
+            else:
+                h = tf.layers.conv2d_transpose(h, 128, 4, strides=2, activation=tf.nn.relu, name="dec_deconv1")
+                h = tf.layers.conv2d_transpose(h, 64, 4, strides=2, activation=tf.nn.relu, name="dec_deconv2")
+                h = tf.layers.conv2d_transpose(h, 32, 5, strides=2, activation=tf.nn.relu, name="dec_deconv3")
             self.output_tensor = tf.layers.conv2d_transpose(h, 3, 4, strides=2, activation=tf.nn.sigmoid,
                                                             name="dec_deconv4")
 

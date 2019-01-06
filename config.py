@@ -33,7 +33,7 @@ Z_SIZE = 512 # Only used for random features
 # it allows smoother control
 TEST_FRAME_SKIP = 1
 MAX_CTE_ERROR = 10.0
-LEVEL = 0
+LEVEL = 1
 BASE_ENV = "DonkeyVae-v0"
 ENV_ID = "DonkeyVae-v0-level-{}".format(LEVEL)
 SIM_PARAMS = ['MIN_THROTTLE', 'MAX_THROTTLE', 'FRAME_SKIP',
