@@ -150,7 +150,7 @@ class TeleopEnv(object):
             return self.env.reset()
         else:
             # Zero speed, neutral angle
-            self.donkey_env.viewer.take_action([0, 0])
+            self.donkey_env.controller.take_action([0, 0])
             return self.current_obs
 
     def wait_for_teleop_reset(self):
@@ -268,7 +268,7 @@ class TeleopEnv(object):
             self.is_filling = False
             if not (self.is_training and not self.is_manual):
                 if self.is_manual and not self.fill_buffer:
-                    donkey_env.viewer.take_action(self.action)
+                    donkey_env.controller.take_action(self.action)
                     self.current_obs, reward, done, info = donkey_env.observe()
                     self.current_obs, _, _, _ = donkey_env.postprocessing_step(self.action, self.current_obs,
                                                                                reward, done, info)

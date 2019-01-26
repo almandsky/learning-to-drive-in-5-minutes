@@ -37,6 +37,8 @@ parser.add_argument('--random-features', action='store_true', default=False,
                     help='Use random features')
 parser.add_argument('--teleop', action='store_true', default=False,
                     help='Use teleoperation for training')
+parser.add_argument('--donkey-name', default='',
+                    help='Use this real donkey robot for training')
 args = parser.parse_args()
 
 set_global_seeds(args.seed)
@@ -48,6 +50,9 @@ if args.trained_agent != "":
 tensorboard_log = None if args.tensorboard_log == '' else args.tensorboard_log + '/' + ENV_ID
 
 print("=" * 10, ENV_ID, args.algo, "=" * 10)
+
+if args.donkey_name != "":
+    os.environ['DONKEY_NAME'] = args.donkey_name
 
 vae = None
 if args.vae_path != '':

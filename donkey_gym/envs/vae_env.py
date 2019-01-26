@@ -11,7 +11,7 @@ from gym.utils import seeding
 from config import INPUT_DIM, MIN_STEERING, MAX_STEERING, JERK_REWARD_WEIGHT, MAX_STEERING_DIFF
 from donkey_gym.core.donkey_proc import DonkeyUnityProcess
 from .donkey_sim import DonkeyUnitySimContoller
-
+from .donkey_remote import VAEDonkeyRemoteController
 
 class DonkeyVAEEnv(gym.Env):
     """
@@ -54,25 +54,38 @@ class DonkeyVAEEnv(gym.Env):
         # Custom frame-stack
         self.n_stack = n_stack
         self.stacked_obs = None
-
-        exe_path = os.environ.get('DONKEY_SIM_PATH')
-        if exe_path is None:
-            # You must start the executable on your own
-            print("Missing DONKEY_SIM_PATH environment var. We assume the unity env is already started")
-
-        # TCP port for communicating with simulation
-        port = int(os.environ.get('DONKEY_SIM_PORT', 9091))
-
+        self.rem_controller = None
         self.unity_process = None
-        if exe_path is not None:
-            print("Starting DonkeyGym env")
-            # Start Unity simulation subprocess if needed
-            self.unity_process = DonkeyUnityProcess()
-            headless = os.environ.get('DONKEY_SIM_HEADLESS', False) == '1'
-            self.unity_process.start(exe_path, headless=headless, port=port)
+     
+        donkey_name = os.environ.get("DONKEY_NAME")
 
-        # start simulation com
-        self.viewer = DonkeyUnitySimContoller(level=level, port=port, max_cte_error=max_cte_error)
+        # start simulation controller
+        if donkey_name is not None:            
+            mqtt_broker = os.environ.get('DONKEY_MQTT_BROKER')
+            if mqtt_broker is None:
+                mqtt_broker = "iot.eclipse.org"
+            print("Connecting to real donkey robot", donkey_name, "using broker", mqtt_broker)
+            self.controller = VAEDonkeyRemoteController(donkey_name, mqtt_broker)
+    
+        else:
+            exe_path = os.environ.get('DONKEY_SIM_PATH')
+
+            if exe_path is None:
+                # You must start the executable on your own
+                print("Missing DONKEY_SIM_PATH environment var. We assume the unity env is already started")
+
+            # TCP port for communicating with simulation
+            port = int(os.environ.get('DONKEY_SIM_PORT', 9091))
+
+            if exe_path is not None:
+                print("Starting DonkeyGym env")
+
+                # Start Unity simulation subprocess if needed
+                self.unity_process = DonkeyUnityProcess()
+                headless = os.environ.get('DONKEY_SIM_HEADLESS', False) == '1'
+                self.unity_process.start(exe_path, headless=headless, port=port)
+
+            self.controller = DonkeyUnitySimContoller(level=level, port=port, max_cte_error=max_cte_error)
 
         if const_throttle is not None:
             # steering only
@@ -91,7 +104,7 @@ class DonkeyVAEEnv(gym.Env):
             self.observation_space = spaces.Box(low=0, high=255,
                                                 shape=INPUT_DIM, dtype=np.uint8)
             # # camera sensor data
-            # self.observation_space = spaces.Box(0, 255, self.viewer.get_sensor_size(), dtype=np.uint8)
+            # self.observation_space = spaces.Box(0, 255, self.controller.get_sensor_size(), dtype=np.uint8)
         else:
             # z latent vector
             self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
@@ -111,13 +124,13 @@ class DonkeyVAEEnv(gym.Env):
         # Frame Skipping
         self.frame_skip = frame_skip
         # wait until loaded
-        self.viewer.wait_until_loaded()
+        self.controller.wait_until_loaded()
 
     def close_connection(self):
-        return self.viewer.close_connection()
+        return self.controller.close_connection()
 
     def exit_scene(self):
-        self.viewer.handler.send_exit_scene()
+        self.controller.handler.send_exit_scene()
 
     def jerk_penalty(self):
         jerk_penalty = 0
@@ -178,13 +191,13 @@ class DonkeyVAEEnv(gym.Env):
             action[0] = prev_steering + diff
 
         for _ in range(self.frame_skip):
-            self.viewer.take_action(action)
+            self.controller.take_action(action)
             observation, reward, done, info = self.observe()
 
         return self.postprocessing_step(action, observation, reward, done, info)
 
     def reset(self):
-        self.viewer.reset()
+        self.controller.reset()
         self.command_history = np.zeros((1, self.n_commands * self.n_command_history))
         observation, reward, done, info = self.observe()
 
@@ -200,14 +213,14 @@ class DonkeyVAEEnv(gym.Env):
 
     def render(self, mode='human'):
         if mode == 'rgb_array':
-            return self.viewer.handler.original_image
+            return self.controller.get_original_image()
         return None
 
     def observe(self):
         """
         Encode the observation using VAE if needed
         """
-        observation, reward, done, info = self.viewer.observe()
+        observation, reward, done, info = self.controller.observe()
         # Learn from Pixels
         if self.vae is None:
             return observation, reward, done, info
@@ -218,7 +231,7 @@ class DonkeyVAEEnv(gym.Env):
     def close(self):
         if self.unity_process is not None:
             self.unity_process.quit()
-        self.viewer.quit()
+        self.controller.quit()
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -227,25 +240,3 @@ class DonkeyVAEEnv(gym.Env):
     def set_vae(self, vae):
         self.vae = vae
 
-# class GeneratedRoadsEnv(DonkeyVAEEnv):
-#
-#     def __init__(self, *args, **kwargs):
-#         super(GeneratedRoadsEnv, self).__init__(level=0, *args, **kwargs)
-#
-#
-# class WarehouseEnv(DonkeyVAEEnv):
-#
-#     def __init__(self, *args, **kwargs):
-#         super(WarehouseEnv, self).__init__(level=1, *args, **kwargs)
-#
-#
-# class AvcSparkfunEnv(DonkeyVAEEnv):
-#
-#     def __init__(self, *args, **kwargs):
-#         super(AvcSparkfunEnv, self).__init__(level=2, *args, **kwargs)
-#
-#
-# class GeneratedTrackEnv(DonkeyVAEEnv):
-#
-#     def __init__(self, *args, **kwargs):
-#         super(GeneratedTrackEnv, self).__init__(level=3, *args, **kwargs)

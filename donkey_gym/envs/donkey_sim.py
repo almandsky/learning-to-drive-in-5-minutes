@@ -15,7 +15,6 @@ from config import INPUT_DIM, ROI, THROTTLE_REWARD_WEIGHT, MAX_THROTTLE, MIN_THR
 from donkey_gym.core.fps import FPSTimer
 from donkey_gym.core.tcp_server import IMesgHandler, SimServer
 
-
 class DonkeyUnitySimContoller:
     """
     Wrapper for communicating with unity simulation.
@@ -59,6 +58,9 @@ class DonkeyUnitySimContoller:
 
     def take_action(self, action):
         self.handler.take_action(action)
+
+    def get_original_image(self):
+        return self.handler.original_image
 
     def observe(self):
         return self.handler.observe()
