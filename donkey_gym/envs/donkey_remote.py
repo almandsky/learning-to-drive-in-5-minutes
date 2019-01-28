@@ -1,3 +1,4 @@
+import numpy as np
 from donkeycar.gym.remote_controller import DonkeyRemoteContoller
 from config import INPUT_DIM, ROI, THROTTLE_REWARD_WEIGHT, MAX_THROTTLE, MIN_THROTTLE, \
     REWARD_CRASH, CRASH_SPEED_WEIGHT
@@ -27,8 +28,13 @@ class VAEDonkeyRemoteController(DonkeyRemoteContoller):
         return 1 + throttle_reward
 
     def take_action(self, action):
+        self.last_throttle = action[0]
+        #steering and throttle are inverted
+        #steering = float(action[1]) * -1.0
+        #throttle = float(action[0]) * -1.0
+        #action = (steering, throttle)
+        action = (float(action[0]), float(action[1]))
         super(VAEDonkeyRemoteController, self).take_action(action)
-        self.last_throttle = action[1]
 
     def wait_until_loaded(self):
         pass
@@ -39,7 +45,10 @@ class VAEDonkeyRemoteController(DonkeyRemoteContoller):
     def observe(self):
         obs = super(VAEDonkeyRemoteController, self).observe()
         #trim top 40 pixels so we get 80, 160, 3 
-        obs = obs[40:, :, :]
+        if obs is None:
+            obs = np.zeros((80, 160, 3))
+        else:
+            obs = obs[40:, :, :]
         done = self.is_game_over()
         reward = self.calc_reward(done)
         return obs, reward, done, self.info

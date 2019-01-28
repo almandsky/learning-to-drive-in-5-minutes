@@ -39,6 +39,8 @@ parser.add_argument('--teleop', action='store_true', default=False,
                     help='Use teleoperation for training')
 parser.add_argument('--donkey-name', default='',
                     help='Use this real donkey robot for training')
+parser.add_argument('--broker', default='',
+                    help='mqtt broker name')
 args = parser.parse_args()
 
 set_global_seeds(args.seed)
@@ -53,6 +55,9 @@ print("=" * 10, ENV_ID, args.algo, "=" * 10)
 
 if args.donkey_name != "":
     os.environ['DONKEY_NAME'] = args.donkey_name
+
+if args.broker != "":
+    os.environ['DONKEY_MQTT_BROKER'] = args.broker
 
 vae = None
 if args.vae_path != '':
