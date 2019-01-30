@@ -1,8 +1,10 @@
 # Original code from https://github.com/araffin/robotics-rl-srl
 # Authors: Antonin Raffin, René Traoré, Ashley Hill
+import os
 import queue
 import time
 from multiprocessing import Queue, Process
+from threading import Thread
 
 import cv2
 import numpy as np
@@ -141,7 +143,12 @@ class DataLoader(object):
 
     def start_process(self):
         """Start preprocessing process"""
-        self.process = Process(target=self._run)
+        
+        if os.name == 'nt':
+            self.process = Thread(target=self._run)
+        else:
+            self.process = Process(target=self._run)
+
         # Make it a deamon, so it will be deleted at the same time
         # of the main process
         self.process.daemon = True
