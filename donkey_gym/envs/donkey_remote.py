@@ -28,11 +28,7 @@ class VAEDonkeyRemoteController(DonkeyRemoteContoller):
         return 1 + throttle_reward
 
     def take_action(self, action):
-        self.last_throttle = action[0]
-        #steering and throttle are inverted
-        #steering = float(action[1]) * -1.0
-        #throttle = float(action[0]) * -1.0
-        #action = (steering, throttle)
+        self.last_throttle = action[1]
         action = (float(action[0]), float(action[1]))
         super(VAEDonkeyRemoteController, self).take_action(action)
 
