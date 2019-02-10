@@ -77,7 +77,7 @@ def denormalize(x, mode="rl"):
     return (255 * np.clip(x, 0, 1)).astype(np.uint8)
 
 
-def preprocess_image(image, convert_to_rgb=False):
+def preprocess_image(image, convert_to_rgb=True):
     """
     :param image: (np.ndarray) image (BGR or RGB)
     :param convert_to_rgb: (bool) whether the conversion to rgb is needed or not

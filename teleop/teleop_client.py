@@ -18,10 +18,10 @@ from donkey_gym.envs.vae_env import DonkeyVAEEnv
 from utils.utils import ALGOS, get_latest_run_id, load_vae
 from .recorder import Recorder
 
-UP = (1, 0)
+UP = (MAX_THROTTLE, 0)
 LEFT = (0, 1)
 RIGHT = (0, -1)
-DOWN = (-1, 0)
+DOWN = (-MAX_THROTTLE, 0)
 STOP = (0, 0)
 KEY_CODE_SPACE = 32
 
@@ -362,7 +362,7 @@ class TeleopEnv(object):
             encoded = self.current_obs[:, :vae_dim]
             reconstructed_image = self.donkey_env.vae.decode(encoded)[0]
             # Convert BGR to RGB
-            reconstructed_image = reconstructed_image[:, :, ::-1]
+            # reconstructed_image = reconstructed_image[:, :, ::-1]
             reconstructed_image = np.swapaxes(reconstructed_image, 0, 1)
             if self.decoded_surface is None:
                 self.decoded_surface = pygame.pixelcopy.make_surface(reconstructed_image)

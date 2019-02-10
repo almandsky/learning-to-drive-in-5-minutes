@@ -53,7 +53,7 @@ class Recorder(object):
     def save_image(self):
         image = self.env.render(mode='rgb_array')
         # Convert RGB to BGR
-        image = image[:, :, ::-1]
+        #image = image[:, :, ::-1]
         cv2.imwrite("{}/{}.jpg".format(self.folder, self.current_idx), image)
         if self.verbose >= 2:
             print("Saving", "{}/{}.jpg".format(self.folder, self.current_idx))

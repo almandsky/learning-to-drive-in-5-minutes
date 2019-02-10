@@ -58,6 +58,7 @@ def main():
         state = (np.array(state) / 100) * (bound_max - bound_min) + bound_min
 
         reconstructed_image = vae.decode(state[None])[0]
+        reconstructed_image = cv2.cvtColor(reconstructed_image, cv2.COLOR_RGB2BGR)
 
         # stop if user closed a window
         if (cv2.getWindowProperty(fig_name, 0) < 0) or (cv2.getWindowProperty('slider for ' + fig_name, 0) < 0):
