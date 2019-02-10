@@ -6,6 +6,7 @@ __pycache__/
 *.pkl
 .idea/
 logs/
+logs*/
 
 # C extensions
 *.so
