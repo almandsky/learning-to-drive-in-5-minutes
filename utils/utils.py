@@ -94,7 +94,7 @@ def load_vae(path=None, z_size=None):
 
 
 def make_env(seed=0, log_dir=None, vae=None, frame_skip=None,
-             teleop=False, n_stack=1):
+             teleop=False, local_control=False, n_stack=1):
     """
     Helper function to multiprocess training
     and log the progress.
@@ -118,7 +118,7 @@ def make_env(seed=0, log_dir=None, vae=None, frame_skip=None,
                            max_throttle=MAX_THROTTLE, max_cte_error=MAX_CTE_ERROR, n_command_history=N_COMMAND_HISTORY,
                            n_stack=n_stack)
         env.seed(seed)
-        if not teleop:
+        if not teleop and not local_control:
             env = Monitor(env, log_dir, allow_early_resets=True)
         return env
 

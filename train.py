@@ -17,6 +17,7 @@ from config import MIN_THROTTLE, MAX_THROTTLE, FRAME_SKIP,\
     MAX_CTE_ERROR, SIM_PARAMS, N_COMMAND_HISTORY, Z_SIZE, BASE_ENV, ENV_ID, MAX_STEERING_DIFF
 from utils.utils import make_env, ALGOS, linear_schedule, get_latest_run_id, load_vae, create_callback
 from teleop.teleop_client import TeleopEnv
+from local_control.local_client import LocalControlEnv
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-tb', '--tensorboard-log', help='Tensorboard log dir', default='', type=str)
@@ -41,6 +42,8 @@ parser.add_argument('--donkey-name', default='',
                     help='Use this real donkey robot for training')
 parser.add_argument('--broker', default='',
                     help='mqtt broker name')
+parser.add_argument('--local-control', action='store_true', default=False,
+                    help='keyboard control on the robot')
 args = parser.parse_args()
 
 set_global_seeds(args.seed)
@@ -126,10 +129,10 @@ if 'normalize' in hyperparams.keys():
         normalize = True
     del hyperparams['normalize']
 
-if not args.teleop:
-    env = DummyVecEnv([make_env(args.seed, vae=vae, teleop=args.teleop)])
+if not args.teleop and not args.local_control:
+    env = DummyVecEnv([make_env(args.seed, vae=vae, teleop=args.teleop, local_control=args.local_control,)])
 else:
-    env = make_env(args.seed, vae=vae, teleop=args.teleop,
+    env = make_env(args.seed, vae=vae, teleop=args.teleop, local_control=args.local_control,
                    n_stack=hyperparams.get('frame_stack', 1))()
 
 if normalize:
@@ -143,7 +146,7 @@ if normalize:
 n_stack = 1
 if hyperparams.get('frame_stack', False):
     n_stack = hyperparams['frame_stack']
-    if not args.teleop:
+    if not args.teleop and not args.local_control:
         env = VecFrameStack(env, n_stack)
     print("Stacking {} frames".format(n_stack))
     del hyperparams['frame_stack']
@@ -189,6 +192,10 @@ if args.teleop:
     env = TeleopEnv(env, is_training=True)
     model.set_env(env)
     env.model = model
+elif args.local_control:
+    env = LocalControlEnv(env, is_training=True)
+    model.set_env(env)
+    env.model = model
 
 kwargs = {}
 if args.log_interval > -1:
@@ -201,7 +208,7 @@ if args.algo == 'sac':
 
 model.learn(n_timesteps, **kwargs)
 
-if args.teleop:
+if args.teleop or args.local_control:
     env.wait()
     env.exit()
     time.sleep(0.5)
