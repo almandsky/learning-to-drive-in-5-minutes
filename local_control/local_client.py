@@ -1,9 +1,38 @@
+import time
 from threading import Event, Thread
 from donkey_gym.envs.vae_env import DonkeyVAEEnv
 from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize, \
     VecFrameStack
 from stable_baselines.bench import Monitor
 from donkeycar.parts.controller import PS3JoystickController
+
+from config import MIN_STEERING, MAX_STEERING, MIN_THROTTLE, MAX_THROTTLE, \
+    LEVEL, N_COMMAND_HISTORY, TEST_FRAME_SKIP, ENV_ID, FRAME_SKIP, \
+    SHOW_IMAGES_TELEOP, REWARD_CRASH, CRASH_SPEED_WEIGHT
+
+MAX_N_OUT_OF_BOUND = FRAME_SKIP
+
+class FPSTimer(object):
+    def __init__(self, report_iter=100):
+        self.t = time.time()
+        self.iter = 0
+        self.report_iter = report_iter
+
+    def reset(self):
+        self.t = time.time()
+        self.iter = 0
+
+    def on_frame(self):
+        self.iter += 1
+        if self.iter == self.report_iter:
+            self.report()
+
+    def report(self):
+        e = time.time()
+        print('fps', float(self.iter) / (e - self.t))
+        self.t = time.time()
+        self.iter = 0
+
 
 class LocalControlEnv(object):
     '''
@@ -81,6 +110,24 @@ class LocalControlEnv(object):
                 self.done_event.clear()
                 self.ready_event.set()
 
+    def step(self, action):
+        self.action = action
+        self.current_obs, reward, done, info = self.env.step(action)
+        # Overwrite done
+        if self.done_event.is_set():
+            done = False
+            # Negative reward for several steps
+            if self.n_out_of_bound < MAX_N_OUT_OF_BOUND:
+                self.n_out_of_bound += 1
+            else:
+                done = True
+            # penalize the agent for getting off the road fast
+            norm_throttle = (action[1] - MIN_THROTTLE) / (MAX_THROTTLE - MIN_THROTTLE)
+            reward = REWARD_CRASH - CRASH_SPEED_WEIGHT * norm_throttle
+        else:
+            done = False
+        return self.current_obs, reward, done, info
+
     def main_loop(self):
         end = False
         control_throttle, control_steering = 0, 0
@@ -106,7 +153,6 @@ class LocalControlEnv(object):
         js_thread.daemon = True
         js_thread.start()
 
-        last_time_pressed = {'space': 0, 'm': 0, 't': 0, 'b': 0, 'o': 0}
         self.current_obs = self.reset()
 
         if self.model is not None:

@@ -19,7 +19,8 @@ from utils.utils import make_env, ALGOS, linear_schedule, get_latest_run_id, loa
 try:
     from teleop.teleop_client import TeleopEnv
 except:
-    print("failed to import TeleopEnv")
+    #teleop fails because of lack of pygame on robot, but not needed.
+    pass
 
 from local_control.local_client import LocalControlEnv
 
