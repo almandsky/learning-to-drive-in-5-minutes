@@ -16,7 +16,11 @@ from stable_baselines.ppo2.ppo2 import constfn
 from config import MIN_THROTTLE, MAX_THROTTLE, FRAME_SKIP,\
     MAX_CTE_ERROR, SIM_PARAMS, N_COMMAND_HISTORY, Z_SIZE, BASE_ENV, ENV_ID, MAX_STEERING_DIFF
 from utils.utils import make_env, ALGOS, linear_schedule, get_latest_run_id, load_vae, create_callback
-from teleop.teleop_client import TeleopEnv
+try:
+    from teleop.teleop_client import TeleopEnv
+except:
+    print("failed to import TeleopEnv")
+
 from local_control.local_client import LocalControlEnv
 
 parser = argparse.ArgumentParser()
