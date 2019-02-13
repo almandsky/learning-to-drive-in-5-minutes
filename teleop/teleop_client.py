@@ -18,10 +18,10 @@ from donkey_gym.envs.vae_env import DonkeyVAEEnv
 from utils.utils import ALGOS, get_latest_run_id, load_vae
 from .recorder import Recorder
 
-UP = (MAX_THROTTLE, 0)
+UP = (MAX_THROTTLE * 1.5, 0)
 LEFT = (0, 1)
 RIGHT = (0, -1)
-DOWN = (-MAX_THROTTLE, 0)
+DOWN = (-MAX_THROTTLE * 5.0, 0)
 STOP = (0, 0)
 KEY_CODE_SPACE = 32
 
