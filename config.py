@@ -30,9 +30,9 @@ MAX_STEERING = 1
 MIN_STEERING = - MAX_STEERING
 
 # Simulation config
-MIN_THROTTLE = 0.09
+MIN_THROTTLE = 0.25
 # max_throttle: 0.6 for level 0 and 0.5 for level 1
-MAX_THROTTLE = 0.11
+MAX_THROTTLE = 0.35
 # Number of past commands to concatenate with the input
 N_COMMAND_HISTORY = 10
 # Max cross track error (used in normal mode to reset the car)
