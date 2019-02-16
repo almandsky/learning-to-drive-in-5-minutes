@@ -1,6 +1,6 @@
 # Training on a real robot
 
-Thanks Antonin, Roma, Wayve.ai, and crew for sharing these great ideas and code. This note is for those who might endeavor to use the techiniques to train a real robot to drive.
+Thanks Antonin, Roma, Wayve.ai, and crew for sharing these great ideas and code. This note is for those who might endeavor to use these techiniques to train a real robot to drive.
 
 I've forked Antonin's work and added two clients:
 
@@ -51,9 +51,9 @@ And any other PWM settings you need to get you robot to run.
 sudu apt-get install -y mosquitto mosquitto-clients
 ```
 
-Optional:
+Optional (scenario 2):
 
-5. If you plan to train locally, then setup stable_baselines. This can take a lot of work. In my experiece tensorflow 1.12 didn't contain many of the libraries that were needed to pull in from tensorflow.contrib and therefore I had to heavily modify 
+5. If you plan to train locally on the robot, then setup stable_baselines. This can take a lot of work. In my experiece tensorflow 1.12 didn't contain many of the libraries that were needed to pull in from tensorflow.contrib and therefore I had to heavily modify 
 `/home/tkramer/env/lib/python3.5/site-packages/tensorflow/contrib/__init__.py`
 to comment out packages which caused errors:
 ```
@@ -74,7 +74,8 @@ to comment out packages which caused errors:
 git clone https://github.com/tawnkramer/learning-to-drive-in-5-minutes
 ```
 
-### PC
+### PC Setup
+
 1. Follow Antonin's setup
 2. Install my fork of donkeycar
 ```
@@ -128,10 +129,15 @@ cd ~/d2_rl
 python manage.py
 ```
 
-3. In another ssh session, modify learning-to-drive-in-5-minutes/scripts/local_train_rl.sh so that the donkey-name argument matches what you put in your myconfig for DONKEY_UNIQUE_NAME
+3. copy vae to the robot
+```
+scp ./logs/vae-32.pkl <user>@<robot_ip>:~/learning-to-drive-in-5-minutes/logs
+```
 
-4. run ``` learning-to-drive-in-5-minutes/scripts/local_train_rl.sh ```
+4. In another ssh session, modify learning-to-drive-in-5-minutes/scripts/local_train_rl.sh so that the donkey-name argument matches what you put in your myconfig for DONKEY_UNIQUE_NAME
 
-5. Hit `circle` to start and stop training session. Expect training sessions to last 20-25 seconds before it's ready to drive again.
+5. run ``` learning-to-drive-in-5-minutes/scripts/local_train_rl.sh ```
+
+6. Hit `circle` to start and stop training session. Expect training sessions to last 20-25 seconds before it's ready to drive again.
 
 
